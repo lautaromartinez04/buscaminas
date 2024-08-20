@@ -29,12 +29,15 @@
   }
   
   .mine-icon {
-    color: red; /* Color rojo para el ícono de la bomba */
-    font-size: 20px; /* Ajusta el tamaño del ícono según sea necesario */
+    color: red;
+    font-size: 20px;
   }
   
   #timer {
     font-size: 20px;
     font-weight: bold;
   }
-  
+
+  .flag-icon {
+    color: #ffc107; 
+  }

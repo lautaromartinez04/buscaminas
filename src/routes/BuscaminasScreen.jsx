@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 export const BuscaminasScreen = () => {
   const rows = 10;
   const cols = 10;
-  const minesCount = 20;
+  const minesCount = 1;
   const [cells, setCells] = useState([]);
   const [gameOver, setGameOver] = useState(false);
   const [timer, setTimer] = useState(0);
@@ -16,7 +16,7 @@ export const BuscaminasScreen = () => {
 
   useEffect(() => {
     createBoard();
-    return () => clearInterval(timerRef.current); // Limpia el temporizador al desmontar el componente
+    return () => clearInterval(timerRef.current);
   }, []);
 
   const createBoard = () => {
@@ -33,10 +33,9 @@ export const BuscaminasScreen = () => {
 
     setCells(newCells);
     setGameOver(false);
-    setTimer(0); // Reinicia el temporizador
-    setGameStarted(false); // Asegúrate de que el temporizador no empiece hasta que el jugador haga clic
+    setTimer(0);
+    setGameStarted(false);
 
-    // Limpia cualquier temporizador anterior
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -44,7 +43,6 @@ export const BuscaminasScreen = () => {
   };
 
   const startTimer = () => {
-    // Limpiar temporizador actual antes de iniciar uno nuevo
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
@@ -58,8 +56,7 @@ export const BuscaminasScreen = () => {
     if (gameOver) return;
 
     if (event.type === 'contextmenu') {
-      // Maneja clic derecho para bandera
-      event.preventDefault(); // Evita el menú contextual del navegador
+      event.preventDefault();
       const newCells = [...cells];
       const cell = newCells[cellIndex];
       if (!cell.revealed) {
@@ -84,17 +81,16 @@ export const BuscaminasScreen = () => {
     if (cell.mine === "mine") {
       setCells(newCells);
 
-      // Mostrar alerta de SweetAlert2
       setTimeout(() => {
         setGameOver(true);
-        clearInterval(timerRef.current); // Detener el temporizador
+        clearInterval(timerRef.current);
         Swal.fire({
           title: '¡Perdiste!',
           icon: 'error',
           confirmButtonText: 'Reiniciar',
           backdrop: true
         }).then(() => {
-          revealAll(newCells); // Muestra todas las minas
+          revealAll(newCells);
         });
       }, 100);
     } else {
@@ -109,12 +105,6 @@ export const BuscaminasScreen = () => {
 
       checkForWin(newCells);
     }
-  };
-
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   const countMinesAround = (index) => {
@@ -176,24 +166,74 @@ export const BuscaminasScreen = () => {
     const revealedCells = newCells.filter(cell => cell.revealed).length;
     const flaggedMines = newCells.filter(cell => cell.flagged && cell.mine === "mine").length;
     const nonMineCells = rows * cols - minesCount;
-
-    if (revealedCells === nonMineCells && flaggedMines === minesCount) {
+  
+    if (revealedCells === nonMineCells) {
       setTimeout(() => {
-        clearInterval(timerRef.current); // Detener el temporizador
+        clearInterval(timerRef.current);
+  
         Swal.fire({
           title: '¡Ganaste!',
-          icon: 'success',
-          confirmButtonText: 'Aceptar',
+          input: 'text',
+          inputLabel: 'Ingresa tu nombre',
+          inputPlaceholder: 'Nombre',
+          confirmButtonText: 'Enviar',
+          showCancelButton: false,
           backdrop: true
+        }).then((result) => {
+          if (result.value) {
+            const name = result.value;
+            const time = timer.toString(); // Convertir el tiempo a cadena
+  
+            // Reemplaza 'YOUR_API_TOKEN' con el token real si es necesario
+            fetch('https://66c4bb2ab026f3cc6cf07e62.mockapi.io/ganadores', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                // 'Authorization': 'Bearer YOUR_API_TOKEN' // Incluye el token si es necesario
+              },
+              body: JSON.stringify({ name, time }), // El cuerpo debe ser un JSON válido
+            })
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Red o error de servidor');
+                }
+                return response.json();
+              })
+              .then(data => {
+                console.log('Datos enviados a MockAPI:', data);
+                Swal.fire({
+                  title: '¡Éxito!',
+                  text: 'Tus datos fueron enviados correctamente.',
+                  icon: 'success',
+                  confirmButtonText: 'Aceptar'
+                });
+              })
+              .catch(error => {
+                console.error('Error al enviar datos a MockAPI:', error);
+                Swal.fire({
+                  title: 'Error',
+                  text: 'No se pudo enviar los datos a MockAPI.',
+                  icon: 'error',
+                  confirmButtonText: 'Aceptar',
+                });
+              });
+          }
         });
       }, 100);
       setGameOver(true);
       revealAll(newCells);
     }
   };
-
+  
+  
   const handleRestart = () => {
     createBoard();
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   return (
