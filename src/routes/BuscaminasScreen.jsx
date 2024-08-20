@@ -7,10 +7,10 @@ import Swal from 'sweetalert2';
 export const BuscaminasScreen = () => {
   const rows = 10;
   const cols = 10;
-  const minesCount = 1;
+  const minesCount = 20;
   const [cells, setCells] = useState([]);
   const [gameOver, setGameOver] = useState(false);
-  const [timer, setTimer] = useState(0);
+  const [timer, setTimer] = useState({ seconds: 0, milliseconds: 0 });
   const [gameStarted, setGameStarted] = useState(false);
   const timerRef = useRef(null);
 
@@ -33,7 +33,7 @@ export const BuscaminasScreen = () => {
 
     setCells(newCells);
     setGameOver(false);
-    setTimer(0);
+    setTimer({ seconds: 0, milliseconds: 0 });
     setGameStarted(false);
 
     if (timerRef.current) {
@@ -48,8 +48,18 @@ export const BuscaminasScreen = () => {
     }
 
     timerRef.current = setInterval(() => {
-      setTimer(prevTimer => prevTimer + 1);
-    }, 1000);
+      setTimer(prevTimer => {
+        let { seconds, milliseconds } = prevTimer;
+        milliseconds += 1;
+
+        if (milliseconds >= 100) {
+          milliseconds = 0;
+          seconds += 1;
+        }
+
+        return { seconds, milliseconds };
+      });
+    }, 10); // Actualizar cada 10 ms
   };
 
   const handleCellClick = (cellIndex, event) => {
@@ -182,16 +192,14 @@ export const BuscaminasScreen = () => {
         }).then((result) => {
           if (result.value) {
             const name = result.value;
-            const time = timer.toString(); // Convertir el tiempo a cadena
+            const time = `${timer.seconds}.${String(timer.milliseconds).padStart(3, '0')}`; // Convertir el tiempo a cadena
   
-            // Reemplaza 'YOUR_API_TOKEN' con el token real si es necesario
             fetch('https://66c4bb2ab026f3cc6cf07e62.mockapi.io/ganadores', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                // 'Authorization': 'Bearer YOUR_API_TOKEN' // Incluye el token si es necesario
               },
-              body: JSON.stringify({ name, time }), // El cuerpo debe ser un JSON válido
+              body: JSON.stringify({ name, time }),
             })
               .then(response => {
                 if (!response.ok) {
@@ -225,15 +233,15 @@ export const BuscaminasScreen = () => {
     }
   };
   
-  
   const handleRestart = () => {
     createBoard();
   };
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const formatTime = (timer) => {
+    const minutes = Math.floor(timer.seconds / 60);
+    const seconds = timer.seconds % 60;
+    const milliseconds = timer.milliseconds;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`;
   };
 
   return (
@@ -245,7 +253,7 @@ export const BuscaminasScreen = () => {
             key={index}
             className={`cell ${cell.revealed ? "revealed" : ""} ${cell.flagged ? "flagged" : ""}`}
             onClick={(e) => handleCellClick(index, e)}
-            onContextMenu={(e) => handleCellClick(index, e)} // Manejar clic derecho
+            onContextMenu={(e) => handleCellClick(index, e)}
           >
             {cell.revealed && cell.mine === "mine" ? (
               <FontAwesomeIcon icon={faBomb} className="mine-icon" />
